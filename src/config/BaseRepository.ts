@@ -89,6 +89,9 @@ export abstract class BaseRepository<T> {
      */
     async clearArchivedCache(collectionName?: string, docId?: string): Promise<void> {
         const archiveService = await ArchiveService.getInstance();
+        if (!archiveService.isEnabled()) {
+            return Promise.resolve();
+        }
         await archiveService.clearArchivedCache(collectionName, docId);
     }
 }

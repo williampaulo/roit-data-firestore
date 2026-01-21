@@ -17,7 +17,6 @@ class NoOpArchivePlugin implements IArchivePlugin {
     collection: string;
     docId: string;
     archivePath: string;
-    projectId?: string;
   }): Promise<Record<string, unknown> | null> {
     return null;
   }
@@ -27,7 +26,6 @@ class NoOpArchivePlugin implements IArchivePlugin {
     docId: string;
     newData: Record<string, unknown>;
     options?: { unarchive?: boolean };
-    projectId?: string;
     archivePath: string;
   }): Promise<{
     result: { success: boolean; message?: string };
@@ -42,7 +40,6 @@ class NoOpArchivePlugin implements IArchivePlugin {
     collection: string;
     docId: string;
     archivePath: string;
-    projectId?: string;
   }): Promise<{ success: boolean; message?: string }> {
     return { success: false, message: 'Archive plugin not registered' };
   }
@@ -67,8 +64,8 @@ class NoOpArchivePlugin implements IArchivePlugin {
     return undefined;
   }
 
-  getConfig(): Record<string, unknown> | undefined {
-    return undefined;
+  debugEnabled(): boolean {
+    return false;
   }
 }
 

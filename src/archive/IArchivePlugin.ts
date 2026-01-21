@@ -30,7 +30,6 @@ export interface IArchivePlugin {
    * @param collection - Collection name
    * @param docId - Document ID
    * @param archivePath - Full object path in Storage
-   * @param projectId - Project ID (optional)
    * @param expectedHash - Expected hash from Firestore stub for integrity verification (optional)
    * @returns Operation result
    */
@@ -38,7 +37,6 @@ export interface IArchivePlugin {
     collection: string;
     docId: string;
     archivePath: string;
-    projectId?: string;
     expectedHash?: string;
   }): Promise<Record<string, unknown> | null>;
 
@@ -49,7 +47,6 @@ export interface IArchivePlugin {
    * @param docId - Document ID
    * @param newData - New data to merge
    * @param options - Options (unarchive: true to remove from Storage)
-   * @param projectId - Project ID (optional)
    * @param archivePath - Full object path in Storage. Required when unarchive=true
    * @returns Merged data
    */
@@ -58,7 +55,6 @@ export interface IArchivePlugin {
     docId: string;
     newData: Record<string, unknown>;
     options?: { unarchive?: boolean };
-    projectId?: string;
     archivePath: string;
   }): Promise<{
     result: { success: boolean; message?: string; error?: Error };
@@ -70,14 +66,13 @@ export interface IArchivePlugin {
    * 
    * @param collection - Collection name
    * @param docId - Document ID
-   * @param projectId - Project ID (optional)
+   * @param archivePath - Full object path in Storage
    * @returns Operation result
    */
   deleteArchivedDocument(params: {
     collection: string;
     docId: string;
     archivePath: string;
-    projectId?: string;
   }): Promise<{ success: boolean; message?: string; error?: Error }>;
 
   /**
@@ -92,10 +87,5 @@ export interface IArchivePlugin {
   getArchivePath(doc: Record<string, unknown> | null | undefined): string | undefined;
   isArchived(doc: Record<string, unknown> | null | undefined): boolean;
   markerKey(): string | undefined;
-
-  /**
-   * Returns the current configuration (for debugging/inspection)
-   * Added in firestore-archive v1.1.0
-   */
-  getConfig?(): Record<string, unknown> | undefined;
+  debugEnabled(): boolean;
 }

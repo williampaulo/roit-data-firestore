@@ -1,4 +1,3 @@
-import { ArchiveConfig } from '../config/ArchiveConfig';
 import { hasArchivePlugin, getArchivePlugin } from './index';
 
 /**
@@ -57,9 +56,6 @@ export class ArchiveService {
   private static isInitializing = false;
 
   // Instance properties
-  private config: ArchiveConfig;
-  /** ProjectId of the Firestore being archived (for path organization) */
-  private projectId: string;
   private isInitialized = false;
   private logger: ArchiveLogger;
 
@@ -102,32 +98,19 @@ export class ArchiveService {
       return;
     }
 
-    this.config = ArchiveConfig.getConfig();
-    this.logger = new ArchiveLogger(this.config.debug);
+    const debug = ['true', true].includes(process.env.FIRESTORE_DEBUG || '') || getArchivePlugin().debugEnabled();
+    this.logger = new ArchiveLogger(debug);
 
-    // ProjectId of the Firestore being archived (used for paths in Storage)
-    this.projectId = this.config.projectId;
-    if (!this.projectId) {
-      this.logger.warn('projectId not configured - using environment variable');
-      this.projectId = process.env.FIRESTORE_PROJECTID || process.env.GCP_PROJECT || '';
-    }
-
-    this.logger.debug(`Configuração: projectId=${this.projectId}, enabled=${this.config.enabled}`);
-
-    if (!this.config.enabled) {
-      this.logger.info('Archive disabled via configuration');
-      this.isInitialized = true;
-      return;
-    }
-
-    if (!hasArchivePlugin()) {
+    if (hasArchivePlugin()) {
+      this.logger.debug(`Plugin firestore-archive registered: enabled=${getArchivePlugin().isEnabled()}`);
+    } else {
       this.logger.warn('Plugin firestore-archive not registered - archive disabled');
     }
 
     this.isInitialized = true;
   }
 
-  public static resetInstance(): void {
+  static resetInstance(): void {
     ArchiveService.instance = null;
     ArchiveService.isInitializing = false;
   }
@@ -137,11 +120,6 @@ export class ArchiveService {
    * Requires the firestore-archive plugin to be registered
    */
   isEnabled(): boolean {
-    // Archive only works with registered plugin
-    return hasArchivePlugin() && getArchivePlugin().isEnabled();
-  }
-
-  static isEnabled(): boolean {
     // Archive only works with registered plugin
     return hasArchivePlugin() && getArchivePlugin().isEnabled();
   }
@@ -161,21 +139,21 @@ export class ArchiveService {
    *
    * Returns the trimmed string or undefined when missing/invalid.
    */
-  static getArchivePath(documentData: any): string | undefined {
+  getArchivePath(documentData: any): string | undefined {
     if (!this.isEnabled()) {
       return undefined;
     }
     return getArchivePlugin().getArchivePath(documentData);
   }
 
-  static getArchiveHash(documentData: any): string | undefined {
+  getArchiveHash(documentData: any): string | undefined {
     if (!this.isEnabled()) {
       return undefined;
     }
     return getArchivePlugin().getArchiveHash(documentData);
   }
 
-  public static markerKey(): string | undefined {
+  markerKey(): string | undefined {
     if (!this.isEnabled()) {
       return undefined;
     }
@@ -191,7 +169,7 @@ export class ArchiveService {
     }
 
     const docId = doc.id;
-    const archivePath = ArchiveService.getArchivePath(doc) || '';
+    const archivePath = this.getArchivePath(doc) || '';
 
     if (!archivePath) {
       throw new Error(
@@ -200,14 +178,13 @@ export class ArchiveService {
     }
 
     // Extract hash from stub for integrity verification
-    const expectedHash = ArchiveService.getArchiveHash(doc);
+    const expectedHash = this.getArchiveHash(doc);
 
     // Delegate to plugin (isEnabled already ensures it exists)
     return getArchivePlugin().getArchivedDocument({
       collection: collectionName,
       docId,
       archivePath,
-      projectId: this.projectId,
       expectedHash,
     });
   }
@@ -246,7 +223,6 @@ export class ArchiveService {
       docId,
       newData,
       options,
-      projectId: this.projectId,
       archivePath,
     });
   }
@@ -279,7 +255,6 @@ export class ArchiveService {
     return getArchivePlugin().deleteArchivedDocument({
       collection: collectionName,
       docId,
-      projectId: this.projectId,
       archivePath,
     });
   }
@@ -303,7 +278,7 @@ export class ArchiveService {
     const archivedData = await this.getArchivedDocument(collectionName, stubData);
 
     if (!archivedData) {
-      this.logger.warn(`Archived data not found for document: ${collectionName}/${stubData.id}`);
+      this.logger.warn(`Archived data not found for document: ${collectionName}/${stubData?.id || ''}`);
       return stubData; // Return stub if archived data is not found
     }
 
@@ -322,13 +297,5 @@ export class ArchiveService {
     }
 
     await getArchivePlugin().invalidateCache(collectionName, docId);
-  }
-
-  /**
-   * Returns the projectId of the Firestore being archived
-   * (used for path organization in Storage)
-   */
-  getProjectId(): string {
-    return this.projectId;
   }
 }

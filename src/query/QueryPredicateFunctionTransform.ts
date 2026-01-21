@@ -63,9 +63,7 @@ export class QueryPredicateFunctionTransform {
             aggregateSum: AggregateField.sum,
             aggregateCount: AggregateField.count,
             startTracer: startTracer,
-            archiveService: ArchiveService.getInstance(),
-            getArchivePath: ArchiveService.getArchivePath,
-            markerKey: ArchiveService.markerKey,
+            archiveService: ArchiveService.getInstance()
         }
 
         if (!options?.collection) {

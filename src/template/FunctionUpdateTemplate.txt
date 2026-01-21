@@ -29,9 +29,10 @@ update(items) {
                     }
                 }
                 
+                const archiveIsEnabled = archiveService.isEnabled()
                 // Buscar documentos existentes em lote (otimização)
                 const docRefs = items.map(item => collection.doc(item.id));
-                const existingDocs = (archiveService.isEnabled() && docRefs.length > 0)
+                const existingDocs = (archiveIsEnabled && docRefs.length > 0)
                     ? yield db.getAll(...docRefs)
                     : [];
                 
@@ -42,10 +43,9 @@ update(items) {
                     const docRef = docRefs[i];
                     let shouldUnarchive = false;
                     
-                    // VERIFICAÇÃO DE DOCUMENTO ARQUIVADO
-                    if (archiveService.isEnabled() && existingDocs[i]?.exists) {
+                    if (archiveIsEnabled && existingDocs[i]?.exists) {
                         const currentData = existingDocs[i].data();
-                        const archivePath = global.instances.getArchivePath(currentData);
+                        const archivePath = archiveService.getArchivePath(currentData);
 
                         if (currentData && archivePath) {
                             const updateResult = yield archiveService.updateArchivedDocument(
@@ -76,9 +76,9 @@ update(items) {
                         itemData.ttlExpirationAt = getTtlTimestamp(ttlExpirationIn, ttlUnit);
                     }
 
-                    if (shouldUnarchive && global.instances.markerKey()) {
+                    if (shouldUnarchive && archiveService.markerKey()) {
                         const FieldValue = global.instances.FieldValue;
-                        itemData[global.instances.markerKey()] = FieldValue.delete();
+                        itemData[archiveService.markerKey()] = FieldValue.delete();
                     }
 
                     batch.set(docRef, itemData, { merge: true });

@@ -12,14 +12,14 @@ updatePartial(id, item) {
                 const document = db.collection('<COLLECTION_REPLACE>').doc(id);
                 
                 let shouldUnarchive = false;
+                const archiveIsEnabled = archiveService.isEnabled()
                 
-                // VERIFICAÇÃO DE DOCUMENTO ARQUIVADO
-                if (archiveService.isEnabled()) {
+                if (archiveIsEnabled) {
                     const currentDoc = yield document.get();
                     
                     if (currentDoc.exists) {
                         const currentData = currentDoc.data();
-                        const archivePath = global.instances.getArchivePath(currentData);
+                        const archivePath = archiveService.getArchivePath(currentData);
 
                         if (currentData && archivePath) {
                             const updateResult = yield archiveService.updateArchivedDocument(
@@ -48,9 +48,9 @@ updatePartial(id, item) {
                         updateTimestampAt
                     };
 
-                    if (shouldUnarchive && global.instances.markerKey()) {
+                    if (shouldUnarchive && archiveService.markerKey()) {
                         const FieldValue = global.instances.FieldValue;
-                        itemData[global.instances.markerKey()] = FieldValue.delete();
+                        itemData[archiveService.markerKey()] = FieldValue.delete();
                     }
 
                     yield document.set(itemData, { merge: true });

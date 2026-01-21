@@ -16,17 +16,18 @@ delete(ids) {
                 const archiveService = yield global.instances.archiveService;
                 const batch = db.batch();
                 const collection = db.collection('<COLLECTION_REPLACE>');
+
+                const archiveIsEnabled = archiveService.isEnabled();
                 
-                // Verificar quais documentos estão arquivados antes de deletar
                 const archivedDocs = [];
-                if (archiveService.isEnabled()) {
+                if (archiveIsEnabled) {
                     const docRefs = ids.map(id => collection.doc(id));
                     const docs = docRefs.length > 0 ? yield db.getAll(...docRefs) : [];
                     for (let i = 0; i < docs.length; i++) {
                         const doc = docs[i];
                         if (doc && doc.exists) {
                             const data = doc.data();
-                            const archivePath = global.instances.getArchivePath(data);
+                            const archivePath = archiveService.getArchivePath(data);
                             if (data && archivePath) {
                                 archivedDocs.push({ id: ids[i], archivePath });
                             }
@@ -42,7 +43,7 @@ delete(ids) {
                     yield batch.commit();
                     
                     // Deletar arquivos do Storage para documentos arquivados
-                    if (archiveService.isEnabled() && archivedDocs.length > 0) {
+                    if (archiveIsEnabled && archivedDocs.length > 0) {
                         const deletePromises = archivedDocs.map(({ id: docId, archivePath }) => 
                             archiveService.deleteArchivedDocument('<COLLECTION_REPLACE>', docId, archivePath)
                                 .catch(err => {

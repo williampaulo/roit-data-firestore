@@ -51,7 +51,7 @@ export class ManualQueryHelper {
             try {
                 // The ArchiveService now manages the cache internally based on the configuration
                 const archivedData = await archiveService.getArchivedDocument(collectionName, doc);
-                const markerKey = ArchiveService.markerKey()
+                const markerKey = archiveService.markerKey()
                 if (archivedData && markerKey) {
                     // Merges the stub data with the archived data
                     // Preserve the marker from stub to prevent archivedData from overwriting it
